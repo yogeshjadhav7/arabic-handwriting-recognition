@@ -40,14 +40,8 @@ data.head()
 # In[3]:
 
 
-from matplotlib import pyplot as plt
-
-def imagify(arr, getimage=False, showimage=True):
+def imagify(arr, getimage=False):
     img = np.array(np.reshape(arr, (DIMENSIONS, DIMENSIONS)), dtype="uint8")
-    if showimage:
-        plt.imshow(img, interpolation='nearest')
-        plt.gray()
-        plt.show() 
         
     if getimage:
         return img
@@ -56,66 +50,11 @@ def imagify(arr, getimage=False, showimage=True):
 # In[4]:
 
 
-def showimage(img):
-    plt.imshow(img, interpolation='nearest')
-    plt.gray()
-    plt.show() 
-
-
-# In[5]:
-
-
-img = imagify(data.values[0], getimage=True)
-
-
-# In[6]:
-
-
-th1,img1 = cv2.threshold(img,127,255,cv2.THRESH_BINARY)
-
-
-# In[7]:
-
-
-print(th1)
-showimage(img1)
-
-
-# In[8]:
-
-
-th2,img2 = cv2.threshold(img,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
-
-
-# In[9]:
-
-
-print(th2)
-showimage(img2)
-
-
-# In[10]:
-
-
-blur = cv2.GaussianBlur(img,(5,5),0)
-th3,img3 = cv2.threshold(blur,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
-
-
-# In[11]:
-
-
-print(th3)
-showimage(img3)
-
-
-# In[12]:
-
-
 THRESH_BINARY = cv2.THRESH_BINARY
 THRESH_BINARY_AND_THRESH_OTSU = cv2.THRESH_BINARY+cv2.THRESH_OTSU
 
 
-# In[13]:
+# In[5]:
 
 
 def apply_thresholding(df, cap=0, thres=THRESH_BINARY_AND_THRESH_OTSU):
@@ -126,7 +65,7 @@ def apply_thresholding(df, cap=0, thres=THRESH_BINARY_AND_THRESH_OTSU):
     thres_values = []
     thresholding_started = False
     for value in values:
-        img = imagify(value, getimage=True, showimage=False)
+        img = imagify(value, getimage=True)
         th_,img = cv2.threshold(img,cap,255,thres)
         img = [img.flatten()]
         if thresholding_started:
@@ -139,7 +78,7 @@ def apply_thresholding(df, cap=0, thres=THRESH_BINARY_AND_THRESH_OTSU):
     return thres_df
 
 
-# In[14]:
+# In[6]:
 
 
 datacopy = data.copy()
@@ -147,13 +86,13 @@ data = apply_thresholding(data, thres=THRESH_BINARY_AND_THRESH_OTSU)
 data.head()
 
 
-# In[15]:
+# In[7]:
 
 
 training_features = data.copy()
 
 
-# In[16]:
+# In[8]:
 
 
 from sklearn.preprocessing import Imputer
@@ -161,7 +100,7 @@ imputer = Imputer(strategy="median")
 imputer.fit(training_features)
 
 
-# In[17]:
+# In[9]:
 
 
 from sklearn.preprocessing import StandardScaler
@@ -169,27 +108,27 @@ scalar = StandardScaler()
 scalar.fit(training_features)
 
 
-# In[18]:
+# In[10]:
 
 
 from sklearn.decomposition import PCA
 
 
-# In[19]:
+# In[11]:
 
 
 training_features = imputer.transform(training_features)
 training_features = scalar.transform(training_features)
 
 
-# In[20]:
+# In[12]:
 
 
 data_labels = load_data(TRAINING_LABELS_FILE)
 training_labels = data_labels.values.flatten()
 
 
-# In[21]:
+# In[13]:
 
 
 test_data = load_data(TESTING_FEATURES_FILE)
@@ -199,66 +138,14 @@ testing_features = imputer.transform(testing_features)
 testing_features = scalar.transform(testing_features)
 
 
-# In[22]:
+# In[14]:
 
 
 test_data_labels = load_data(TESTING_LABELS_FILE)
 testing_labels = test_data_labels.values.flatten()
 
 
-# In[23]:
-
-
-# SGD Classifier
-from sklearn.linear_model import SGDClassifier
-from sklearn.model_selection import cross_val_score
-from sklearn.base import clone
-
-pca = PCA(n_components=PCA_THRESHOLD)
-pca.fit(training_features)
-train_x = pca.transform(training_features)
-test_x = pca.transform(testing_features)
-
-sgd_clf = SGDClassifier(random_state=42)
-print("Cross Val Scores on training set\n", cross_val_score(clone(sgd_clf), train_x, training_labels, cv=3, scoring="accuracy"))
-
-
-sgd_clf.fit(train_x, training_labels)
-print("\n\nAccuracy on testing data set\n", sum(testing_labels == sgd_clf.predict(test_x)) / len(testing_labels))
-
-
-# In[24]:
-
-
-# KNeighbors Classifier
-from sklearn.neighbors import KNeighborsClassifier 
-
-pca = PCA(n_components=PCA_THRESHOLD)
-pca.fit(training_features)
-train_x = pca.transform(training_features)
-test_x = pca.transform(testing_features)
-
-knn_clf = KNeighborsClassifier()
-print("Cross Val Scores on training set\n", cross_val_score(clone(knn_clf), train_x, training_labels, cv=3, scoring="accuracy"))
-
-knn_clf.fit(train_x, training_labels)
-print("\n\nAccuracy on testing data set\n", sum(testing_labels == knn_clf.predict(test_x)) / len(testing_labels))
-
-
-# In[25]:
-
-
-# Random Forest Classifier
-from sklearn.ensemble import RandomForestClassifier 
-
-forest_clf = RandomForestClassifier(random_state=42)
-print("Cross Val Scores on training set\n", cross_val_score(clone(forest_clf), training_features, training_labels, cv=3, scoring="accuracy"))
-
-forest_clf.fit(training_features, training_labels)
-print("\n\nAccuracy on testing data set\n", sum(testing_labels == forest_clf.predict(testing_features)) / len(testing_labels))
-
-
-# In[25]:
+# In[15]:
 
 
 # CNN Classifier
@@ -330,13 +217,13 @@ print('Test loss:', score[0])
 print('Test accuracy:', score[1])
 
 
-# In[24]:
+# In[ ]:
 
 
 model.save("model.h5")
 
 
-# In[26]:
+# In[ ]:
 
 
 from keras.models import load_model
