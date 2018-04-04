@@ -42,7 +42,7 @@ data.head()
 
 def imagify(arr, getimage=False):
     img = np.array(np.reshape(arr, (DIMENSIONS, DIMENSIONS)), dtype="uint8")
-        
+
     if getimage:
         return img
 
@@ -60,7 +60,7 @@ THRESH_BINARY_AND_THRESH_OTSU = cv2.THRESH_BINARY+cv2.THRESH_OTSU
 def apply_thresholding(df, cap=0, thres=THRESH_BINARY_AND_THRESH_OTSU):
     if thres == None:
         return df
-    
+
     values = df.values
     thres_values = []
     thresholding_started = False
@@ -73,7 +73,7 @@ def apply_thresholding(df, cap=0, thres=THRESH_BINARY_AND_THRESH_OTSU):
         else:
             thres_values = img
             thresholding_started = True
-            
+
     thres_df = pd.DataFrame(thres_values, columns=df.columns)
     return thres_df
 
@@ -155,9 +155,10 @@ from keras.layers import Dense, Flatten
 from keras.layers import Conv2D, MaxPooling2D, BatchNormalization, Dropout
 from keras.optimizers import Adam
 from sklearn.preprocessing import LabelBinarizer
+from keras.callbacks import ModelCheckpoint, EarlyStopping
 
-batch_size = 128
-epochs = 5
+batch_size = 64
+epochs = 25
 
 size = np.int16(np.sqrt(training_features.shape[1]))
 
@@ -170,47 +171,46 @@ train_y = binarizer.transform(training_labels)
 test_y = binarizer.transform(testing_labels)
 
 num_classes = len(binarizer.classes_)
-droprate = 0.5
+droprate = 0.7
 
 model = Sequential()
 model.add(Conv2D(256, kernel_size=(1, 1), strides=(1, 1), activation='elu', input_shape=(size, size, 1)))
 model.add(BatchNormalization())
-model.add(Conv2D(64, kernel_size=(4, 4), strides=(1, 1), activation='elu', padding='valid'))
+model.add(Conv2D(256, kernel_size=(4, 4), strides=(1, 1), activation='elu', padding='valid'))
 model.add(BatchNormalization())
-model.add(Conv2D(64, kernel_size=(4, 4), strides=(1, 1), activation='elu', padding='valid'))
+model.add(Conv2D(256, kernel_size=(4, 4), strides=(1, 1), activation='elu', padding='valid'))
 model.add(BatchNormalization())
 model.add(Flatten())
 
-#model.add(Dense(512, activation='elu'))
-#model.add(BatchNormalization())
-#model.add(Dropout(droprate))
+model.add(Dense(512, activation='elu'))
+model.add(BatchNormalization())
+model.add(Dropout(droprate))
 
 model.add(Dense(256, activation='elu'))
 model.add(BatchNormalization())
 model.add(Dropout(droprate))
 
-#model.add(Dense(128, activation='elu'))
-#model.add(BatchNormalization())
-#model.add(Dropout(droprate))
-
 model.add(Dense(128, activation='elu'))
 model.add(BatchNormalization())
-#model.add(Dropout(droprate))
+model.add(Dropout(droprate))
 
 model.add(Dense(num_classes, activation='softmax'))
 
 model.summary()
 
-adam = Adam()
+adam = Adam(lr=0.001)
 model.compile(loss='categorical_crossentropy',
               optimizer=adam,
               metrics=['accuracy'])
+
+callbacks = [EarlyStopping( monitor='val_acc', patience=1, mode='max', verbose=1)]
 
 history = model.fit(train_x, train_y,
                     batch_size=batch_size,
                     epochs=epochs,
                     verbose=1,
-                    validation_data=(test_x, test_y))
+                    validation_data=(test_x, test_y),
+                    callbacks=callbacks)
 
 score = model.evaluate(test_x, test_y, verbose=1)
 print('Test loss:', score[0])
@@ -228,8 +228,7 @@ model.save("model.h5")
 
 from keras.models import load_model
 
-saved_model = load_model("model.h5")
+saved_model = load_model("trained_model.h5")
 score = saved_model.evaluate(test_x, test_y, verbose=1)
 print('Test loss:', score[0])
 print('Test accuracy:', score[1])
-
