@@ -171,7 +171,7 @@ train_y = binarizer.transform(training_labels)
 test_y = binarizer.transform(testing_labels)
 
 num_classes = len(binarizer.classes_)
-droprate = 0.7
+droprate = 0.6
 
 model = Sequential()
 model.add(Conv2D(256, kernel_size=(1, 1), strides=(1, 1), activation='elu', input_shape=(size, size, 1)))
@@ -198,12 +198,12 @@ model.add(Dense(num_classes, activation='softmax'))
 
 model.summary()
 
-adam = Adam(lr=0.001)
+adam = Adam()
 model.compile(loss='categorical_crossentropy',
               optimizer=adam,
               metrics=['accuracy'])
 
-callbacks = [EarlyStopping( monitor='val_acc', patience=1, mode='max', verbose=1)]
+callbacks = [EarlyStopping( monitor='val_acc', patience=2, min_delta=0.01, mode='max', verbose=1)]
 
 history = model.fit(train_x, train_y,
                     batch_size=batch_size,
@@ -220,7 +220,7 @@ print('Test accuracy:', score[1])
 # In[ ]:
 
 
-model.save("model.h5")
+model.save("trained_model.h5")
 
 
 # In[ ]:
