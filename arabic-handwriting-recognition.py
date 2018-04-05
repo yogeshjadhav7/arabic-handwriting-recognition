@@ -156,9 +156,11 @@ from keras.layers import Conv2D, MaxPooling2D, BatchNormalization, Dropout
 from keras.optimizers import Adam
 from sklearn.preprocessing import LabelBinarizer
 from keras.callbacks import ModelCheckpoint, EarlyStopping
+from keras.models import load_model
 
 batch_size = 64
 epochs = 25
+TRAIN_MODEL = True
 
 size = np.int16(np.sqrt(training_features.shape[1]))
 
@@ -173,28 +175,37 @@ test_y = binarizer.transform(testing_labels)
 num_classes = len(binarizer.classes_)
 droprate = 0.6
 
-model = Sequential()
-model.add(Conv2D(256, kernel_size=(1, 1), strides=(1, 1), activation='elu', input_shape=(size, size, 1)))
-model.add(BatchNormalization())
-model.add(Conv2D(256, kernel_size=(4, 4), strides=(1, 1), activation='elu', padding='valid'))
-model.add(BatchNormalization())
-model.add(Conv2D(256, kernel_size=(4, 4), strides=(1, 1), activation='elu', padding='valid'))
-model.add(BatchNormalization())
-model.add(Flatten())
+try:
+    model = load_model(MODEL_NAME)
+except:
+    model = None
 
-model.add(Dense(512, activation='elu'))
-model.add(BatchNormalization())
-model.add(Dropout(droprate))
+if model is None:
+    model = Sequential()
+    model.add(Conv2D(256, kernel_size=(1, 1), strides=(1, 1), activation='elu', input_shape=(size, size, 1)))
+    model.add(BatchNormalization())
+    model.add(Conv2D(256, kernel_size=(4, 4), strides=(1, 1), activation='elu', padding='valid'))
+    model.add(BatchNormalization())
+    model.add(Conv2D(256, kernel_size=(4, 4), strides=(1, 1), activation='elu', padding='valid'))
+    model.add(BatchNormalization())
+    model.add(Flatten())
 
-model.add(Dense(256, activation='elu'))
-model.add(BatchNormalization())
-model.add(Dropout(droprate))
+    model.add(Dense(512, activation='elu'))
+    model.add(BatchNormalization())
+    model.add(Dropout(droprate))
 
-model.add(Dense(128, activation='elu'))
-model.add(BatchNormalization())
-model.add(Dropout(droprate))
+    model.add(Dense(256, activation='elu'))
+    model.add(BatchNormalization())
+    model.add(Dropout(droprate))
 
-model.add(Dense(num_classes, activation='softmax'))
+    model.add(Dense(128, activation='elu'))
+    model.add(BatchNormalization())
+    model.add(Dropout(droprate))
+
+    model.add(Dense(num_classes, activation='softmax'))
+
+else:
+    print(MODEL_NAME, " is restored.")
 
 model.summary()
 
@@ -203,32 +214,30 @@ model.compile(loss='categorical_crossentropy',
               optimizer=adam,
               metrics=['accuracy'])
 
-callbacks = [EarlyStopping( monitor='val_acc', patience=2, min_delta=0.01, mode='max', verbose=1)]
+callbacks = [EarlyStopping( monitor='val_acc', patience=5, min_delta=0.1, mode='max', verbose=1),
+             ModelCheckpoint(MODEL_NAME, monitor='val_acc', verbose=1, save_best_only=True, save_weights_only=False, mode='max', period=1)]
 
-history = model.fit(train_x, train_y,
-                    batch_size=batch_size,
-                    epochs=epochs,
-                    verbose=1,
-                    validation_data=(test_x, test_y),
-                    callbacks=callbacks)
+if TRAIN_MODEL:
+    history = model.fit(train_x, train_y,
+                        batch_size=batch_size,
+                        epochs=epochs,
+                        verbose=1,
+                        validation_data=(test_x, test_y),
+                        callbacks=callbacks)
 
-score = model.evaluate(test_x, test_y, verbose=1)
-print('Test loss:', score[0])
-print('Test accuracy:', score[1])
+    score = model.evaluate(test_x, test_y, verbose=1)
+    print('Test loss:', score[0])
+    print('Test accuracy:', score[1])
+    model.save(MODEL_NAME)
+else:
+    print("Opted not to train the model as TRAIN_MODEL is set to False. May be because model is already trained and is now being used for validation")
+    
 
 
 # In[ ]:
 
 
-model.save("trained_model.h5")
-
-
-# In[ ]:
-
-
-from keras.models import load_model
-
-saved_model = load_model("trained_model.h5")
+saved_model = load_model(MODEL_NAME)
 score = saved_model.evaluate(test_x, test_y, verbose=1)
 print('Test loss:', score[0])
 print('Test accuracy:', score[1])
