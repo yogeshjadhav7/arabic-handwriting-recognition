@@ -19,6 +19,7 @@ TRAINING_FEATURES_FILE = "csvTrainImages 13440x1024.csv"
 TRAINING_LABELS_FILE = "csvTrainLabel 13440x1.csv"
 TESTING_FEATURES_FILE = "csvTestImages 3360x1024.csv"
 TESTING_LABELS_FILE = "csvTestLabel 3360x1.csv"
+MODEL_NAME = "trained_model.h5"
 
 PCA_THRESHOLD = 0.9
 
