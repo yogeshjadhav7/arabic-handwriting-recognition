@@ -222,14 +222,13 @@ if TRAIN_MODEL:
     history = model.fit(train_x, train_y,
                         batch_size=batch_size,
                         epochs=epochs,
-                        verbose=1,
+                        verbose=0,
                         validation_data=(test_x, test_y),
                         callbacks=callbacks)
 
     score = model.evaluate(test_x, test_y, verbose=1)
     print('Test loss:', score[0])
     print('Test accuracy:', score[1])
-    model.save(MODEL_NAME)
 else:
     print("Opted not to train the model as TRAIN_MODEL is set to False. May be because model is already trained and is now being used for validation")
     
