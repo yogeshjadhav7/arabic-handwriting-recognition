@@ -161,7 +161,7 @@ from keras.models import load_model
 
 batch_size = 64
 epochs = 25
-TRAIN_MODEL = True
+TRAIN_MODEL = False
 
 size = np.int16(np.sqrt(training_features.shape[1]))
 
@@ -183,12 +183,19 @@ except:
 
 if model is None:
     model = Sequential()
-    model.add(Conv2D(256, kernel_size=(1, 1), strides=(1, 1), activation='elu', input_shape=(size, size, 1)))
+    model.add(Conv2D(256, kernel_size=(2, 2), strides=(1, 1), activation='elu', input_shape=(size, size, 1)))
     model.add(BatchNormalization())
+
     model.add(Conv2D(256, kernel_size=(4, 4), strides=(1, 1), activation='elu', padding='valid'))
     model.add(BatchNormalization())
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+
     model.add(Conv2D(256, kernel_size=(4, 4), strides=(1, 1), activation='elu', padding='valid'))
     model.add(BatchNormalization())
+
+    model.add(Conv2D(256, kernel_size=(4, 4), strides=(1, 1), activation='elu', padding='valid'))
+    model.add(BatchNormalization())
+    model.add(Dropout(droprate))
     model.add(Flatten())
 
     model.add(Dense(512, activation='elu'))
@@ -215,8 +222,7 @@ model.compile(loss='categorical_crossentropy',
               optimizer=adam,
               metrics=['accuracy'])
 
-callbacks = [EarlyStopping( monitor='val_acc', patience=5, min_delta=0.1, mode='max', verbose=1),
-             ModelCheckpoint(MODEL_NAME, monitor='val_acc', verbose=1, save_best_only=True, save_weights_only=False, mode='max', period=1)]
+callbacks = [ModelCheckpoint(MODEL_NAME, monitor='val_acc', verbose=1, save_best_only=True, save_weights_only=False, mode='max', period=1)]
 
 if TRAIN_MODEL:
     history = model.fit(train_x, train_y,
@@ -233,7 +239,7 @@ else:
     print("Opted not to train the model as TRAIN_MODEL is set to False. May be because model is already trained and is now being used for validation")
     
 
-
+    
 # In[ ]:
 
 
